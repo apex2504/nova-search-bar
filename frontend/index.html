@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Backup QSB Remover</title>
+	<style>
+		body {
+			background-color: #121212;
+		}
+
+		#dropZone {
+            transition: 0.2s;
+			background-color: #00b2d2;
+			color: white;
+			border: none;
+			border-radius: 30px;
+			font-size: 24px;
+			padding: 0px 0px -32px 0px;
+			cursor: pointer;
+			margin: auto;
+            align-content: center;
+		}
+
+		#dropZone {
+			width: 400px;
+			height: 200px;
+			text-align: center;
+            line-height: 200px;
+		}
+		#dropZone.dragover, #dropZone:hover {
+            transition: 0.2s;
+			background-color: #007a96;
+            width: 420px;
+            height: 210px;
+            line-height: 210px;
+		}
+
+        .center {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+	</style>
+</head>
+<body>
+    <h1 style="color: #ffffff; margin-top: 10%; margin-left: 30%; font-weight: lighter; font-size: 350%;">Nova backup<br>search bar remover</h1>
+	<div onmouseover="hover(true)" onmouseleave="hover(false)" class="center" id="dropZone">Upload backup</div>
+	<script>
+		document.getElementById("dropZone").addEventListener("dragover", handleDragOver);
+		document.getElementById("dropZone").addEventListener("dragleave", handleDragLeave);
+		document.getElementById("dropZone").addEventListener("drop", handleDrop);
+        document.getElementById("dropZone").addEventListener("click", selectFile)
+
+        function hover(isOver) {
+            dz = document.getElementById('dropZone')
+            if (isOver === true) {
+                dz.innerHTML = "Click to upload"
+            }
+            else {
+                dz.innerHTML = "Upload backup"
+            }
+        }
+
+		function selectFile() {
+			var input = document.createElement("input");
+			input.type = "file";
+			input.onchange = handleFileSelect;
+			input.click();
+		}
+
+		function handleFileSelect(event) {
+			var file = event.target.files[0];
+			uploadFile(file);
+		}
+
+		function handleDragOver(event) {
+			event.preventDefault();
+			event.dataTransfer.dropEffect = "copy";
+            var dz = document.getElementById("dropZone")
+			dz.classList.add("dragover");
+            dz.innerHTML = "Drop to upload"
+		}
+
+		function handleDragLeave(event) {
+			event.preventDefault();
+            var dz = document.getElementById("dropZone")
+			dz.classList.remove("dragover");
+            dz.innerHTML = "Upload backup"
+		}
+
+		function handleDrop(event) {
+			event.preventDefault();
+            var dz = document.getElementById("dropZone")
+			dz.classList.remove("dragover");
+            dz.innerHTML = "Uploading..."
+			var files = event.dataTransfer.files;
+			if (files.length > 0) {
+				var file = files[0];
+				uploadFile(file);
+			}
+		}
+
+		function uploadFile(file) {
+			var formData = new FormData();
+			formData.append("file", file);
+			var xhr = new XMLHttpRequest();
+            xhr.responseType = 'blob'
+			xhr.open("POST", "http://127.0.0.1:8008/api/upload-backup");
+			xhr.send(formData);
+			xhr.onreadystatechange = function() {
+                var dz = document.getElementById("dropZone")
+				if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var responseFile = new Blob([xhr.response], {type: file.type});
+                        var a = document.createElement("a");
+                        a.download = "NoQsb_" + file.name;
+                        a.href = URL.createObjectURL(responseFile);
+                        a.style.display = "none";
+                        document.body.appendChild(a);
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        document.body.removeChild(a);
+                        dz.innerHTML = "Download started"
+                    }
+                    else if (xhr.status == 413) {
+                        dz.innerHTML = "Max file size is 50MB."
+                    }
+                    else if (xhr.status == 400) {
+                        dz.innerHTML = "Invalid Nova 7/8 backup."
+                    }
+                    else if (xhr.status != 200) {
+                        dz.innerHTML = "Failed. Code " + xhr.status
+                    }
+                }
+			}
+		}
+	</script>
+</body>
+</html>
