@@ -28,7 +28,7 @@ class BetterZipFile: # Loosely based on https://github.com/twbgc/sunzip
 
         Returns
         ------------
-        A :bool:`int` indicating whether or not the file is a valid zip.
+        A :class:`bool` indicating whether or not the file is a valid zip.
         """
         if zipfile.is_zipfile(self.zip_file.fp):
             return True
